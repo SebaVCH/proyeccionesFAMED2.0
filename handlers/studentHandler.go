@@ -54,9 +54,19 @@ func LoginStudent(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"token": token})
 
 }
+
 func GetStudentInfo(c *gin.Context) {
+	rut, exists := c.Get("rut")
+	if !exists {
+		c.IndentedJSON(http.StatusUnauthorized, gin.H{"message": "Problema con el estudiante"})
+		return
+	}
+
 	var student models.Student
+	if err := database.DB.Where("rut = ?", rut).First(&student).Error; err != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Problema con el estudiante"})
+		return
+	}
 
-	c.IndentedJSON(http.StatusBadRequest, &student)
-
+	c.IndentedJSON(http.StatusOK, student)
 }
