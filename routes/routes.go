@@ -11,9 +11,9 @@ func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	r.POST("/register", handlers.RegisterStudent)
-	r.POST("/register", handlers.LoginStudent)
+	r.POST("/login", handlers.LoginStudent)
 
-	protected := r.Group("/protected")
+	protected := r.Group("/")
 	protected.Use(middleware.AuthMiddleware())
 
 	protected.GET("/student", handlers.GetStudentInfo)

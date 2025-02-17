@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gin-gonic/gin"
+	"math"
 	"net/http"
 	"proyeccionesFAMED/database"
 	"proyeccionesFAMED/models"
@@ -17,8 +18,8 @@ func GetStudentGrades(c *gin.Context) {
 		return
 	}
 
-	if err := database.DB.Where("StudentRUT = ?", rut).Find(&grades); err != nil {
-		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Error al obtener las calificaciones del estudiante"})
+	if err := database.DB.Where("student_rut = ?", rut).Find(&grades).Error; err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Esta persona no tiene calificaciones"})
 		return
 	}
 	c.IndentedJSON(http.StatusBadRequest, gin.H{"grades": grades})
@@ -39,7 +40,7 @@ func SimulateGrades(c *gin.Context) {
 		return
 	}
 
-	if err := database.DB.Where("StudentRUT = ?", rut).Find(&grades).Error; err != nil {
+	if err := database.DB.Where("student_rut = ?", rut).Find(&grades).Error; err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Error al obtener las calificaciones del estudiante"})
 		return
 	}
@@ -57,7 +58,7 @@ func SimulateGrades(c *gin.Context) {
 
 	for _, subject := range subjects {
 		credit := subjectCredits[subject.Id]
-		gradeValue := 0.0
+		gradeValue := 0.0000
 		for _, grade := range grades {
 			if grade.SubjectID == subject.Id {
 				gradeValue = grade.Grade
@@ -71,9 +72,10 @@ func SimulateGrades(c *gin.Context) {
 
 	var finalAverage float64
 	if totalAssignedCredits > 0 {
-		finalAverage = weightedSum / float64(totalAssignedCredits)
+		finalAverage = math.Round((weightedSum/float64(totalAssignedCredits))*10000) / 10000
 	} else {
 		finalAverage = 0
 	}
-	c.IndentedJSON(http.StatusOK, gin.H{"simulated_average": finalAverage})
+	formattedAverage := math.Round(finalAverage*100) / 100
+	c.IndentedJSON(http.StatusOK, gin.H{"simulated_average": formattedAverage})
 }

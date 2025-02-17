@@ -64,7 +64,7 @@ func GetStudentInfo(c *gin.Context) {
 
 	var student models.Student
 	if err := database.DB.Where("rut = ?", rut).First(&student).Error; err != nil {
-		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "Problema con el estudiante"})
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Problema con el estudiante"})
 		return
 	}
 
