@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"proyeccionesFAMED/database"
 	"proyeccionesFAMED/models"
+	"time"
 )
 
 func GetStudentGrades(c *gin.Context) {
@@ -22,8 +23,7 @@ func GetStudentGrades(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Esta persona no tiene calificaciones"})
 		return
 	}
-	c.IndentedJSON(http.StatusBadRequest, gin.H{"grades": grades})
-
+	c.IndentedJSON(http.StatusOK, gin.H{"grades": grades})
 }
 
 func SimulateGrades(c *gin.Context) {
@@ -32,6 +32,14 @@ func SimulateGrades(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Error al obtener las calificaciones del estudiante"})
 		return
 	}
+
+	cacheKey := "simulated_average:" + rut.(string)
+	cachedResult, err := database.RedisClient.Get(database.Ctx, cacheKey).Result()
+	if err == nil {
+		c.IndentedJSON(http.StatusOK, gin.H{"simulated_average": cachedResult})
+		return
+	}
+
 	var grades []models.Grade
 	var subjects []models.Subject
 
@@ -58,7 +66,7 @@ func SimulateGrades(c *gin.Context) {
 
 	for _, subject := range subjects {
 		credit := subjectCredits[subject.Id]
-		gradeValue := 0.0000
+		gradeValue := 0.0
 		for _, grade := range grades {
 			if grade.SubjectID == subject.Id {
 				gradeValue = grade.Grade
@@ -77,5 +85,7 @@ func SimulateGrades(c *gin.Context) {
 		finalAverage = 0
 	}
 	formattedAverage := math.Round(finalAverage*100) / 100
+	database.RedisClient.Set(database.Ctx, cacheKey, formattedAverage, 10*time.Minute)
+
 	c.IndentedJSON(http.StatusOK, gin.H{"simulated_average": formattedAverage})
 }

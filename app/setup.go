@@ -16,6 +16,10 @@ func StartBackend() error {
 		return err
 	}
 
+	if err := database.StartRedis(); err != nil {
+		return err
+	}
+
 	if err := routes.SetupRouter().Run(":8080"); err != nil {
 		return err
 	}
